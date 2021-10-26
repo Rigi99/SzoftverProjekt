@@ -21,9 +21,9 @@ def handle_socket_message(msg):
 
 if __name__ == '__main__':
     symbol = 'BTCUSDT'
-    # twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
-    # twm.start()
-    # twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
+    twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
+    twm.start()
+    twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
     engine = sqlalchemy.create_engine('sqlite:///BTCUSDstream.db')
     aux = pd.read_sql('BTCUSDT', engine)
     print(aux)
