@@ -9,6 +9,7 @@ from binance import ThreadedWebsocketManager
 import matplotlib.pyplot as plt
 import websocket
 import json
+import requests
 
 
 def on_open(ws):
@@ -44,11 +45,23 @@ if __name__ == '__main__':
     # twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
     # twm.start()
     # twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
-    # engine = sqlalchemy.create_engine('sqlite:///BTCUSDstream.db')
-    # aux = pd.read_sql('BTCUSDT', engine)
-    # print(aux)
+    #  engine = sqlalchemy.create_engine('sqlite:///BTCUSDstream.db')
+    #  aux = pd.read_sql('BTCUSDT', engine)
+    #  print(aux)
     # plt.plot(aux.Price)
     # plt.show()
-    socket = 'wss://ws-feed.exchange.coinbase.com'
-    ws = websocket.WebSocketApp(socket, on_open=on_open, on_message=on_message)
-    ws.run_forever()
+    # socket = 'wss://ws-feed.exchange.coinbase.com'
+    # ws = websocket.WebSocketApp(socket, on_open=on_open, on_message=on_message)
+    # ws.run_forever()
+    # r = requests.get('https://www.coingecko.com/en')
+    # df = pd.read_html(r.text)[0]
+    # df = df[['Coin', 'Price', 'Mkt Cap']]
+    # df['Coin'] = df['Coin'].apply(lambda x: x.split('  ')[0])
+    # df['Price'] = df['Price'].apply(lambda x: x.replace(',', '').replace('$', ''))
+    # df['Mkt Cap'] = df['Mkt Cap'].apply(lambda x: x.replace(',', '').replace('$', ''))
+    # engine = sqlalchemy.create_engine('sqlite:///CoinGecko.db')
+    # df.to_sql('Coin', engine, if_exists='append', index=False)
+    # # print(df)
+    # aux = pd.read_sql('Coin', engine)
+    # print(aux)
+    print('Hello')
