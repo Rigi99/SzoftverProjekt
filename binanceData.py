@@ -29,7 +29,7 @@ def getBinanceData():
     twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
 
 
-def movingAverageMethod():
+def movingAverageMethodBinance():
     btc = pd.read_sql('BTCUSDT', engine)
     movingAverage = float(btc['Price'].mean())
     helper.append(movingAverage)
