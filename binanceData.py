@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import time
 from matplotlib import rcParams
 import seaborn as sb
+from binance.client import Client
 
 engine = sqlalchemy.create_engine('sqlite:///BinanceDB.db')
 rcParams['figure.figsize'] = 8, 6
@@ -16,6 +17,7 @@ helper = []
 def handle_socket_message(msg):
     df = pd.DataFrame([msg])
     df = df.loc[:, ['s', 'E', 'p']]
+    print(df)
     df.columns = ['symbol', 'Time', 'Price']
     df.Price = df.Price.astype(float)
     df.Time = pd.to_datetime(df.Time, unit='ms')
@@ -47,3 +49,18 @@ def movingAverageMethodBinance():
         print('Not Trade')
     print('\n')
     time.sleep(1)
+
+
+def getHistoricalData():
+    client = Client(config.apiKey, config.apiSecurity)
+    klines = client.get_historical_klines(symbol='BTCUSDT', interval='1d', start_str='16 Apr, 2021')
+    df = pd.DataFrame(klines)
+    df = df.loc[:, [0, 1, 2, 3, 4, 5]]
+    df.columns = ['DAY', 'Price', 'Highest', 'Lowest', 'Closing', 'Volume']
+    df.DAY = pd.to_datetime(df.DAY, unit='ms')
+    df.Price = df.Price.astype(float)
+    df.Highest = df.Highest.astype(float)
+    df.Lowest = df.Lowest.astype(float)
+    df.Closing = df.Closing.astype(float)
+    df.Volume = df.Volume.astype(float)
+    df.to_sql('BTCUSDTHistorical', engine, if_exists='append', index=False)
