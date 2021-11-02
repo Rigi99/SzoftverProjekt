@@ -64,3 +64,5 @@ def getHistoricalData():
     df.Closing = df.Closing.astype(float)
     df.Volume = df.Volume.astype(float)
     df.to_sql('BTCUSDTHistorical', engine, if_exists='append', index=False)
+    aux = pd.read_sql('BTCUSDTHistorical', engine)
+    print(aux)
