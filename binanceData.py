@@ -31,13 +31,18 @@ def getBinanceData():
     twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
 
 
-def movingAverageMethodBinance():
-    btc = pd.read_sql('BTCUSDT', engine)
-    movingAverage = float(btc['Price'].mean())
-    helper.append(movingAverage)
+def movingAverageMethodBinance(Db):
+    btc = pd.read_sql(Db, engine)
+    # movingAverage = float(btc['Price'].mean())
+    # helper.append(movingAverage)
+    # movingAverage = float(btc['Price'].mean())
+    # helper.append(movingAverage)
+    ma = 200
+    btc['ma'] = btc['Closing'].rolling(window=ma, min_periods=ma).mean()
+    movingAverage = float(btc['ma'][-1:])
     print('Moving average=', movingAverage)
-    plt.plot(btc.Price, label='Price')
-    plt.plot(helper, label='Moving average')
+    plt.plot(btc.Closing, label='Price')
+    plt.plot(btc.ma, label='Moving average')
     plt.title('BTC Price Chart')
     plt.legend()
     plt.show()
@@ -48,10 +53,11 @@ def movingAverageMethodBinance():
     else:
         print('Not Trade')
     print('\n')
+
     time.sleep(1)
 
 
-def getHistoricalData():
+def getHistoricalData(Db):
     client = Client(config.apiKey, config.apiSecurity)
     klines = client.get_historical_klines(symbol='BTCUSDT', interval='1d', start_str='16 Apr, 2021')
     df = pd.DataFrame(klines)
@@ -63,6 +69,6 @@ def getHistoricalData():
     df.Lowest = df.Lowest.astype(float)
     df.Closing = df.Closing.astype(float)
     df.Volume = df.Volume.astype(float)
-    df.to_sql('BTCUSDTHistorical', engine, if_exists='append', index=False)
-    aux = pd.read_sql('BTCUSDTHistorical', engine)
+    df.to_sql(Db, engine, if_exists='append', index=False)
+    aux = pd.read_sql(Db, engine)
     print(aux)

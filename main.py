@@ -2,8 +2,10 @@ import binanceData
 import coinbaseData
 
 if __name__ == '__main__':
+    Db = 'BTCUSDTHistorical'
     # binanceData.getBinanceData()
-    # binanceData.movingAverageMethodBinance()
+
     # coinbaseData.getCoinBaseData()
     # coinbaseData.movingAverageMethodCoinBase()
-    binanceData.getHistoricalData()
+    binanceData.getHistoricalData(Db)
+    binanceData.movingAverageMethodBinance(Db)
