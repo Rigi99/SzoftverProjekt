@@ -8,6 +8,7 @@ from matplotlib import rcParams
 import seaborn as sb
 from binance.client import Client
 
+
 engine = sqlalchemy.create_engine('sqlite:///BinanceDB.db')
 rcParams['figure.figsize'] = 8, 6
 sb.set()
@@ -58,6 +59,7 @@ def movingAverageMethodBinance(Db):
 
 
 def getHistoricalData(Db):
+    deleteDataBase()
     client = Client(config.apiKey, config.apiSecurity)
     klines = client.get_historical_klines(symbol='BTCUSDT', interval='1d', start_str='16 Apr, 2021')
     df = pd.DataFrame(klines)
@@ -72,3 +74,10 @@ def getHistoricalData(Db):
     df.to_sql(Db, engine, if_exists='append', index=False)
     aux = pd.read_sql(Db, engine)
     print(aux)
+
+def deleteDataBase():
+    import os
+    if os.path.exists("BinanceDB.db"):
+        os.remove("BinanceDB.db")
+    else:
+        print("The file does not exist")
