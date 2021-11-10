@@ -13,7 +13,6 @@ rcParams['figure.figsize'] = 8, 6
 sb.set()
 
 
-
 def on_open(ws):
     print('The socket is open!')
     subscribe_message = {

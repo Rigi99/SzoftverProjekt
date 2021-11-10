@@ -1,6 +1,5 @@
 import pandas as pd
 import config
-import sqlalchemy
 from binance import ThreadedWebsocketManager
 import matplotlib.pyplot as plt
 import time
@@ -8,7 +7,6 @@ from matplotlib import rcParams
 import seaborn as sb
 from binance.client import Client
 
-engine = sqlalchemy.create_engine('sqlite:///BinanceDB.db')
 rcParams['figure.figsize'] = 8, 6
 sb.set()
 helper = []
@@ -17,50 +15,52 @@ helper = []
 def handle_socket_message(msg):
     df = pd.DataFrame([msg])
     df = df.loc[:, ['s', 'E', 'p']]
-    print(df)
     df.columns = ['symbol', 'Time', 'Price']
     df.Price = df.Price.astype(float)
     df.Time = pd.to_datetime(df.Time, unit='ms')
-    df.to_sql('BTCUSDT', engine, if_exists='append', index=False)
+    df.to_sql(config.DbRealTime, config.engineRealTime, if_exists='append', index=False)
+    aux = pd.read_sql(config.DbRealTime, config.engineRealTime)
+    print(aux)
 
 
 def getBinanceData():
-    symbol = 'BTCUSDT'
-    twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
-    twm.start()
-    twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
+    # symbol = 'BTCUSDT'
+    # twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
+    # twm.start()
+    # twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
+    # twm.stop()
+    clientAsset = Client(config.apiKey, config.apiSecurity)
+    print(clientAsset.get_asset_balance('BTC'))
+    print(clientAsset.get_asset_balance('USD'))
 
 
 def movingAverageMethodBinance(Db):
-    btc = pd.read_sql(Db, engine)
-    # movingAverage = float(btc['Price'].mean())
-    # helper.append(movingAverage)
-    # movingAverage = float(btc['Price'].mean())
-    # helper.append(movingAverage)
+    btc = pd.read_sql(Db, config.engineHistorical)
     ma = 200
     btc['ma'] = btc['Closing'].rolling(window=ma, min_periods=ma).mean()
     movingAverage = float(btc['ma'][-1:])
-    print('Moving average=', movingAverage)
-    plt.plot(btc.Closing, label='Price')
+    plt.plot(btc.Closing, label='Closing')
     plt.plot(btc.ma, label='Moving average')
+    plt.plot(movingAverage, label='Moving average')
     plt.title('BTC Price Chart')
     plt.legend()
     plt.show()
-    if btc.iloc[-1] > movingAverage:
+    if btc.Price.iloc[-1] < movingAverage:
         print('Buy')
-    elif btc.iloc[-1] < movingAverage:
+        print(btc.Price.iloc[-1])
+    elif btc.Price.iloc[-1] > movingAverage:
         print('Sell')
+        print(btc.Price.iloc[-1])
     else:
         print('Not Trade')
     print('\n')
-
+    deleteDataBase(Db + '.db')
     time.sleep(1)
 
 
 def getHistoricalData(Db):
-    deleteDataBase()
     client = Client(config.apiKey, config.apiSecurity)
-    klines = client.get_historical_klines(symbol='BTCUSDT', interval='1d', start_str='16 Apr, 2021')
+    klines = client.get_historical_klines(symbol='BTCUSDT', interval='30m', start_str='16 Apr, 2021')
     df = pd.DataFrame(klines)
     df = df.loc[:, [0, 1, 2, 3, 4, 5]]
     df.columns = ['DAY', 'Price', 'Highest', 'Lowest', 'Closing', 'Volume']
@@ -70,14 +70,14 @@ def getHistoricalData(Db):
     df.Lowest = df.Lowest.astype(float)
     df.Closing = df.Closing.astype(float)
     df.Volume = df.Volume.astype(float)
-    df.to_sql(Db, engine, if_exists='append', index=False)
-    aux = pd.read_sql(Db, engine)
+    df.to_sql(Db, config.engineHistorical, if_exists='append', index=False)
+    aux = pd.read_sql(Db, config.engineHistorical)
     print(aux)
 
 
-def deleteDataBase():
+def deleteDataBase(Db):
     import os
-    if os.path.exists("BinanceDB.db"):
-        os.remove("BinanceDB.db")
+    if os.path.exists(Db):
+        os.remove(Db)
     else:
         print("The file does not exist")
