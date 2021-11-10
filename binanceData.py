@@ -24,14 +24,14 @@ def handle_socket_message(msg):
 
 
 def getBinanceData():
-    # symbol = 'BTCUSDT'
-    # twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
-    # twm.start()
-    # twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
+    symbol = 'BTCBUSD'
+    twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
+    twm.start()
+    twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
     # twm.stop()
-    clientAsset = Client(config.apiKey, config.apiSecurity)
-    print(clientAsset.get_asset_balance('BTC'))
-    print(clientAsset.get_asset_balance('USD'))
+    # clientAsset = Client(config.apiKey, config.apiSecurity)
+    # print(clientAsset.get_asset_balance('BTC'))
+    # print(clientAsset.get_asset_balance('USD'))
 
 
 def movingAverageMethodBinance(Db):
