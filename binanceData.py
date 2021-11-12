@@ -82,7 +82,7 @@ def getHistoricalData(Db):
     df.Volume = df.Volume.astype(float)
     df.to_sql(Db, config.engineHistorical, if_exists='append', index=False)
     aux = pd.read_sql(Db, config.engineHistorical)
-    print(aux)
+    # print(aux)
 
 
 def deleteDataBase(Db):
