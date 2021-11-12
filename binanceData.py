@@ -6,6 +6,9 @@ import time
 from matplotlib import rcParams
 import seaborn as sb
 from binance.client import Client
+import json
+import numpy as np
+from datetime import datetime
 
 rcParams['figure.figsize'] = 8, 6
 sb.set()
@@ -28,10 +31,7 @@ def getBinanceData():
     twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
     twm.start()
     twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
-    # twm.stop()
-    # clientAsset = Client(config.apiKey, config.apiSecurity)
-    # print(clientAsset.get_asset_balance('BTC'))
-    # print(clientAsset.get_asset_balance('USD'))
+    twm.stop()
 
 
 def movingAverageMethodBinance(Db):
@@ -39,28 +39,38 @@ def movingAverageMethodBinance(Db):
     ma = 200
     btc['ma'] = btc['Closing'].rolling(window=ma, min_periods=ma).mean()
     movingAverage = float(btc['ma'][-1:])
-    plt.plot(btc.Closing, label='Closing')
-    plt.plot(btc.ma, label='Moving average')
-    plt.plot(movingAverage, label='Moving average')
-    plt.title('BTC Price Chart')
-    plt.legend()
-    plt.show()
-    if btc.Price.iloc[-1] < movingAverage:
-        print('Buy')
-        print(btc.Price.iloc[-1])
-    elif btc.Price.iloc[-1] > movingAverage:
-        print('Sell')
-        print(btc.Price.iloc[-1])
+    # plt.plot(btc.Closing, label='Closing')
+    # plt.plot(btc.ma, label='Moving average')
+    # plt.plot(movingAverage, label='Moving average')
+    # plt.title('BTC Price Chart')
+    # plt.legend()
+    # plt.show()
+    f = open("output.txt", "a")
+    if btc.Price.iloc[-1] <= movingAverage:
+        f.write("BUY!\t")
+        f.write(str(btc.Price.iloc[-1]))
+        f.write('\t')
+        f.write(str(movingAverage))
+        f.write('\t\t')
+        f.write(str(datetime.now()))
+        f.write('\n**************************************************\n')
+        f.close()
     else:
-        print('Not Trade')
-    print('\n')
+        f.write("SELL!\t")
+        f.write(str(btc.Price.iloc[-1]))
+        f.write('\t')
+        f.write(str(movingAverage))
+        f.write('\t\t')
+        f.write(str(datetime.now()))
+        f.write('\n**************************************************\n')
+        f.close()
     deleteDataBase(Db + '.db')
-    time.sleep(1)
+    print('DONE!')
 
 
 def getHistoricalData(Db):
     client = Client(config.apiKey, config.apiSecurity)
-    klines = client.get_historical_klines(symbol='BTCUSDT', interval='30m', start_str='16 Apr, 2021')
+    klines = client.get_historical_klines(symbol='BTCBUSD', interval='30m', start_str='16 Apr, 2021')
     df = pd.DataFrame(klines)
     df = df.loc[:, [0, 1, 2, 3, 4, 5]]
     df.columns = ['DAY', 'Price', 'Highest', 'Lowest', 'Closing', 'Volume']
@@ -81,3 +91,15 @@ def deleteDataBase(Db):
         os.remove(Db)
     else:
         print("The file does not exist")
+
+
+def getClientData():
+    # clientAsset = Client(config.apiKey, config.apiSecurity)
+    # data = clientAsset.get_account()
+    # for it in data['balances']:
+    #     print(it)
+    with open('data.json', 'r') as file:
+        data = json.load(file)
+    for it in data['balances']:
+        print(it)
+    # print(clientAsset.get_asset_balance('USDT'))
