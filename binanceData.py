@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import config
 from binance import ThreadedWebsocketManager
@@ -13,42 +14,43 @@ from datetime import datetime
 rcParams['figure.figsize'] = 8, 6
 sb.set()
 helper = []
+# twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
+# twm.start()
+# twm.stop()
+# symbol = 'BTCBUSD'
+# twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
 
 
 def handle_socket_message(msg):
     df = pd.DataFrame([msg])
-    df = df.loc[:, ['s', 'E', 'p']]
-    df.columns = ['symbol', 'Time', 'Price']
+    df = df.loc[:, ['E', 'p']]
+    df.columns = ['DAY', 'Price']
     df.Price = df.Price.astype(float)
-    df.Time = pd.to_datetime(df.Time, unit='ms')
-    df.to_sql(config.DbRealTime, config.engineRealTime, if_exists='append', index=False)
-    aux = pd.read_sql(config.DbRealTime, config.engineRealTime)
-    print(aux)
+    df.DAY = pd.to_datetime(df.DAY, unit='ms')
+    df.to_sql(config.DbHistorical, config.engineHistorical, if_exists='append', index=False)
 
 
-def getBinanceData():
-    symbol = 'BTCBUSD'
-    twm = ThreadedWebsocketManager(config.apiKey, config.apiSecurity)
-    twm.start()
-    twm.start_trade_socket(callback=handle_socket_message, symbol=symbol)
-    twm.stop()
-
-
-def getHistoricalData(Db):
+def getHistoricalData1Day(Db, eng):
     client = Client(config.apiKey, config.apiSecurity)
-    klines = client.get_historical_klines(symbol='BTCBUSD', interval='30m', start_str='25 Sept, 2021')
+    klines = client.get_historical_klines(symbol='BTCBUSD', interval=Client.KLINE_INTERVAL_1DAY, start_str='15 Oct, 2021')
     df = pd.DataFrame(klines)
-    df = df.loc[:, [0, 1, 2, 3, 4, 5]]
-    df.columns = ['DAY', 'Price', 'Highest', 'Lowest', 'Closing', 'Volume']
+    df = df.loc[:, [0, 1]]
+    df.columns = ['DAY', 'Price']
     df.DAY = pd.to_datetime(df.DAY, unit='ms')
     df.Price = df.Price.astype(float)
-    df.Highest = df.Highest.astype(float)
-    df.Lowest = df.Lowest.astype(float)
-    df.Closing = df.Closing.astype(float)
-    df.Volume = df.Volume.astype(float)
-    df.to_sql(Db, config.engineHistorical, if_exists='append', index=False)
-    # aux = pd.read_sql(Db, config.engineHistorical)
-    # print(aux)
+    df.to_sql(Db, eng, if_exists='append', index=False)
+    getHistoricalDataAux(Db, eng)
+
+
+def getHistoricalDataAux(Db, eng):
+    client = Client(config.apiKey, config.apiSecurity)
+    klines = client.get_historical_klines(symbol='BTCBUSD', interval=Client.KLINE_INTERVAL_1MINUTE, start_str='18 Nov, 2021')
+    df = pd.DataFrame(klines)
+    df = df.loc[:, [0, 1]]
+    df.columns = ['DAY', 'Price']
+    df.DAY = pd.to_datetime(df.DAY, unit='ms')
+    df.Price = df.Price.astype(float)
+    df.iloc[-1:].to_sql(Db, eng, if_exists='append', index=False)
 
 
 def deleteDataBase(Db):
@@ -71,106 +73,42 @@ def getClientData():
     # print(clientAsset.get_asset_balance('USDT'))
 
 
-def movingAverageMethodBinance1Day(Db):
-    getHistoricalData(config.DbHistorical)
-    btc = pd.read_sql(Db, config.engineHistorical)
-    ma = 48
-    btc['ma'] = btc['Closing'].rolling(window=ma, min_periods=ma).mean()
+def movingAverageMethodBinance1Day(Db, eng):
+    btc = pd.read_sql(Db, eng)
+    movingAverage = btc.Price.iloc[-1]
+    return movingAverage, btc.Price.iloc[-1]
+
+
+def movingAverageMethodBinance7Days(Db, eng):
+    btc = pd.read_sql(Db, eng)
+    ma = 7
+    btc['ma'] = btc['Price'].rolling(window=ma, min_periods=ma).mean()
     movingAverage = float(btc['ma'][-1:])
-    # plt.plot(btc.Closing, label='Closing')
-    # plt.plot(btc.ma, label='Moving average')
-    # plt.plot(movingAverage, label='Moving average')
-    # plt.title('BTC Price Chart')
-    # plt.legend()
-    # plt.show()
-    f = open("output1.txt", "a")
-    if btc.Price.iloc[-1] <= movingAverage:
-        f.write("BUY!\t")
-        f.write(str(btc.Price.iloc[-1]))
-        f.write('\t\t')
-        f.write(str(movingAverage))
-        f.write('\t\t')
-        f.write(str(datetime.now()))
-        f.write('\n**************************************************\n')
-        f.close()
-    else:
-        f.write("SELL!\t")
-        f.write(str(btc.Price.iloc[-1]))
-        f.write('\t\t')
-        f.write(str(movingAverage))
-        f.write('\t\t')
-        f.write(str(datetime.now()))
-        f.write('\n**************************************************\n')
-        f.close()
-    deleteDataBase(Db + '.db')
-    print('DONE!')
+    return movingAverage, btc.Price.iloc[-1]
 
 
-def movingAverageMethodBinance5Day(Db):
-    getHistoricalData(config.DbHistorical)
-    btc = pd.read_sql(Db, config.engineHistorical)
-    ma = 240
-    btc['ma'] = btc['Closing'].rolling(window=ma, min_periods=ma).mean()
+def movingAverageMethodBinance30Days(Db, eng):
+    btc = pd.read_sql(Db, eng)
+    ma = 30
+    btc['ma'] = btc['Price'].rolling(window=ma, min_periods=ma).mean()
     movingAverage = float(btc['ma'][-1:])
-    # plt.plot(btc.Closing, label='Closing')
-    # plt.plot(btc.ma, label='Moving average')
-    # plt.plot(movingAverage, label='Moving average')
-    # plt.title('BTC Price Chart')
-    # plt.legend()
-    # plt.show()
-    f = open("output5.txt", "a")
-    if btc.Price.iloc[-1] <= movingAverage:
-        f.write("BUY!\t")
-        f.write(str(btc.Price.iloc[-1]))
-        f.write('\t\t')
-        f.write(str(movingAverage))
-        f.write('\t\t')
-        f.write(str(datetime.now()))
-        f.write('\n**************************************************\n')
-        f.close()
-    else:
-        f.write("SELL!\t")
-        f.write(str(btc.Price.iloc[-1]))
-        f.write('\t\t')
-        f.write(str(movingAverage))
-        f.write('\t\t')
-        f.write(str(datetime.now()))
-        f.write('\n**************************************************\n')
-        f.close()
-    deleteDataBase(Db + '.db')
-    print('DONE!')
+    return movingAverage, btc.Price.iloc[-1]
 
 
-def movingAverageMethodBinance25Days(Db):
-    getHistoricalData(config.DbHistorical)
-    btc = pd.read_sql(Db, config.engineHistorical)
-    ma = 1200
-    btc['ma'] = btc['Closing'].rolling(window=ma, min_periods=ma).mean()
-    movingAverage = float(btc['ma'][-1:])
-    # plt.plot(btc.Closing, label='Closing')
-    # plt.plot(btc.ma, label='Moving average')
-    # plt.plot(movingAverage, label='Moving average')
-    # plt.title('BTC Price Chart')
-    # plt.legend()
-    # plt.show()
-    f = open("output25.txt", "a")
-    if btc.Price.iloc[-1] <= movingAverage:
-        f.write("BUY!\t")
-        f.write(str(btc.Price.iloc[-1]))
-        f.write('\t\t')
-        f.write(str(movingAverage))
-        f.write('\t\t')
-        f.write(str(datetime.now()))
-        f.write('\n**************************************************\n')
-        f.close()
-    else:
-        f.write("SELL!\t")
-        f.write(str(btc.Price.iloc[-1]))
-        f.write('\t\t')
-        f.write(str(movingAverage))
-        f.write('\t\t')
-        f.write(str(datetime.now()))
-        f.write('\n**************************************************\n')
-        f.close()
-    deleteDataBase(Db + '.db')
-    print('DONE!')
+def run():
+    #alaptokenel ha kevesebb lenne eladas utan ne adjon el + kommentelni
+    # distanceListSell = [-1]
+    # distanceListBuy = [-1]
+    # if currentPrice >= ma30Days && ma7Days >= ma30Days:
+    #     distanceListSell.append(math.sqrt(abs(ma7Days ** 2 - ma30Days ** 2)))
+    #     if distanceListSell[-2] < distanceListSell[-1]:
+    #         f = open('Sell.txt', 'a')
+    #         f.write("Sell" + '\t\t' + str(currentPrice) + '\t\t' + str(datetime.now()))
+    #         f.close()
+    # elif currentPrice < ma30Days && ma7Days < ma30Days:
+    #     distanceListBuy.append(math.sqrt(abs(ma1Day ** 2 - ma30Days ** 2)))
+    #     if distanceListBuy[-2] < distanceListBuy[-1]:
+    #         f = open('Buy.txt', 'a')
+    #         f.write("Buy" + '\t\t' + str(currentPrice) + '\t\t' + str(datetime.now()))
+    #         f.close()
+    pass
