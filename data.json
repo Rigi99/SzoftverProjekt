@@ -9,12 +9,12 @@
     "balances": [
         {
             "asset": "BTC",
-            "free": "4723846.89208129",
+            "free": "0",
             "locked": "0.00000000"
         },
         {
-            "asset": "LTC",
-            "free": "4763368.68006011",
+            "asset": "BUSD",
+            "free": "60000",
             "locked": "0.00000000"
         }
     ]
