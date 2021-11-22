@@ -1,15 +1,8 @@
-import logging
 import math
 import pandas as pd
 import config
-from binance import ThreadedWebsocketManager
-import matplotlib.pyplot as plt
 import time
-from matplotlib import rcParams
-import seaborn as sb
 from binance.client import Client
-import json
-import numpy as np
 from datetime import datetime
 import binance.enums as be
 
@@ -57,16 +50,11 @@ def deleteDataBase(Db):
 
 
 def getClientData(symbolCoin, symbolMoney):
-    # clientAsset = Client(config.apiKey, config.apiSecurity)
-    # data = clientAsset.get_account()
-    # for it in data['balances']:
-    #     print(it)
+    clientAsset = Client(config.apiKey, config.apiSecurity)
+    data = clientAsset.get_account()
     coinAmount = 0
     baseBalance = 0
-    with open('data.json', 'r') as file:
-        data = json.load(file)
     for it in data['balances']:
-        # print(it['asset'], it['free'])
         if it['asset'] == symbolCoin:
             coinAmount = float(it['free'])
         if it['asset'] == symbolMoney:
@@ -109,20 +97,21 @@ def getMovingAverages():
 
 def strategy():
     coinBalance, baseBalance = getClientData(symbolCoin='BTC', symbolMoney='BUSD')
+    ma1Day, ma7Days, ma30Days, currentPrice = getMovingAverages()
     currentBalance = baseBalance
-    distanceListSell = [-1]
-    distanceListBuy = [-1]
+    distanceListSell = [math.sqrt(abs(ma7Days ** 2 - ma30Days ** 2))]
+    distanceListBuy = [math.sqrt(abs(ma1Day ** 2 - ma30Days ** 2))]
     while True:
         ma1Day, ma7Days, ma30Days, currentPrice = getMovingAverages()
         if currentPrice >= ma30Days and ma7Days >= ma30Days and coinBalance != 0:
             distanceListSell.append(math.sqrt(abs(ma7Days ** 2 - ma30Days ** 2)))
-            if distanceListSell[-2] < distanceListSell[-1]:
+            if distanceListSell[-2] > distanceListSell[-1]:
                 if baseBalance < currentPrice * coinBalance:
-                    buy(currentBalance=currentBalance, currentPrice=currentPrice)
+                    sell(coinBalance=coinBalance)
         elif currentPrice < ma30Days and ma7Days < ma30Days and currentBalance != 0:
             distanceListBuy.append(math.sqrt(abs(ma1Day ** 2 - ma30Days ** 2)))
-            if distanceListBuy[-2] < distanceListBuy[-1]:
-                sell(currentBalance=currentBalance, currentPrice=currentPrice)
+            if distanceListBuy[-2] > distanceListBuy[-1]:
+                buy(currentBalance=currentBalance, currentPrice=currentPrice)
         deleteDataBase(config.DbHistorical + '.db')
         time.sleep(65)
         coinBalance, currentBalance = getClientData(symbolCoin='BTC', symbolMoney='BUSD')
@@ -135,24 +124,8 @@ def buy(currentBalance, currentPrice):
     print(order)
 
 
-def sell(currentBalance, currentPrice):
+def sell(coinBalance):
     client = Client(config.apiKey, config.apiSecurity)
-    buy_quantity = round(currentBalance / currentPrice)
-    order = client.create_order(symbol='BTCBUSD', side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
+    sell_quantity = coinBalance
+    order = client.create_order(symbol='BTCBUSD', side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     print(order)
-
-
-# f = open('Buy.txt', 'a')
-# coinBalance = currentBalance / currentPrice
-# currentBalance = 0
-# f.write(
-#     "Buy" + '\t\t' + str(currentPrice) + '\t\t' + str(datetime.now()) + '\t\t' + str(
-#         coinBalance) + '\n')
-# f.close()
-
-# f = open('Sell.txt', 'a')
-# currentBalance = coinBalance * currentPrice
-# coinBalance = 0
-# f.write("Sell" + '\t\t' + str(currentPrice) + '\t\t' + str(datetime.now()) + '\t\t' + str(
-#     currentBalance) + '\n')
-# f.close()

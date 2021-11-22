@@ -1,4 +1,6 @@
 import binanceData
 
 if __name__ == '__main__':
-    binanceData.strategy()
+    # binanceData.strategy()
+    coinBalance, baseBalance = binanceData.getClientData(symbolCoin='BTC', symbolMoney='BUSD')
+    print(coinBalance, baseBalance)
