@@ -14,6 +14,8 @@ def handle_socket_message(msg):
     df.Price = df.Price.astype(float)
     df.DAY = pd.to_datetime(df.DAY, unit='ms')
     df.to_sql(config.DbHistorical, config.engineHistorical, if_exists='append', index=False)
+    # This function formats the response message from the API, we only need the price and the timestamp, so we get only
+    # those columns. After we have the data we need, we store it in a database.
 
 
 def getHistoricalData1Day(Db, eng):
@@ -27,6 +29,9 @@ def getHistoricalData1Day(Db, eng):
     df.Price = df.Price.astype(float)
     df.to_sql(Db, eng, if_exists='append', index=False)
     getHistoricalDataAux(Db, eng)
+    # In this function we get the historical data about a specified coin. We have to specify a starting date, and an
+    # interval, now it is set to 1 day, this means that we get 1 record for the past days. We also store these in a
+    # database.
 
 
 def getHistoricalDataAux(Db, eng):
@@ -39,6 +44,8 @@ def getHistoricalDataAux(Db, eng):
     df.DAY = pd.to_datetime(df.DAY, unit='ms')
     df.Price = df.Price.astype(float)
     df.iloc[-1:].to_sql(Db, eng, if_exists='append', index=False)
+    # This function appends the current price for a specified coin to the historical database, we do this for the
+    # accuracy of the moving averages.
 
 
 def deleteDataBase(Db):
@@ -47,6 +54,7 @@ def deleteDataBase(Db):
         os.remove(Db)
     else:
         print("The file does not exist")
+    # This is a simple database deleting function.
 
 
 def getClientData(symbolCoin, symbolMoney):
@@ -60,12 +68,14 @@ def getClientData(symbolCoin, symbolMoney):
         if it['asset'] == symbolMoney:
             baseBalance = float(it['free'])
     return coinAmount, baseBalance
+    # This function returns the clients coin balance and the clients money balance.
 
 
 def movingAverageMethodBinance1Day(Db, eng):
     btc = pd.read_sql(Db, eng)
     movingAverage = btc.Price.iloc[-1]
     return movingAverage, btc.Price.iloc[-1]
+    # In this function we calculate the 1 day moving average.
 
 
 def movingAverageMethodBinance7Days(Db, eng):
@@ -74,6 +84,7 @@ def movingAverageMethodBinance7Days(Db, eng):
     btc['ma'] = btc['Price'].rolling(window=ma, min_periods=ma).mean()
     movingAverage = float(btc['ma'][-1:])
     return movingAverage, btc.Price.iloc[-1]
+    # In this function we calculate the 6 day moving average.
 
 
 def movingAverageMethodBinance30Days(Db, eng):
@@ -82,6 +93,7 @@ def movingAverageMethodBinance30Days(Db, eng):
     btc['ma'] = btc['Price'].rolling(window=ma, min_periods=ma).mean()
     movingAverage = float(btc['ma'][-1:])
     return movingAverage, btc.Price.iloc[-1]
+    # In this function we calculate the 30day moving average.
 
 
 def getMovingAverages():
@@ -93,6 +105,7 @@ def getMovingAverages():
     # ma7Days, currentPrice = 59000, 60000
     # ma30Days, currentPrice = 58500, 60000
     return ma1Day, ma7Days, ma30Days, currentPrice
+    # In this function we return the different moving averages, and the current price.
 
 
 def strategy():
@@ -115,6 +128,21 @@ def strategy():
         deleteDataBase(config.DbHistorical + '.db')
         time.sleep(65)
         coinBalance, currentBalance = getClientData(symbolCoin='BTC', symbolMoney='BUSD')
+    # This is the main function. Here is implemented the strategy. First, we get the clients balances, and the moving
+    # averages. Then the 2 lists we use are used to follow the different moving average changes. We calculate the
+    # distance between the moving averages, because we use these distances to decide to buy or sell coins. In an
+    # infinite loop we start the considering process. We get the moving averages, and then in the if statements we
+    # check some aspects to make a good decision in buying or selling coins. We check the current price and the 7 day
+    # moving average, because when the current price and the 7 day average is above the 30 day average, it is a good
+    # moment to sell our coins. This last smaller statement, where we check our base balance and the balance we will
+    # have after selling, guarantees profit. When we create a buying order, we make sure that the current price and
+    # the 7 day average is under the 30 day average, because tha is the moment when the coin has a very low price for
+    # a longer period. The buying order is placed when the distance between the 1 day average and the 30 day average
+    # drops, because this shows that the price began to increase. The selling order is placed when the distance between
+    # the 7 day average and the 30 day average drops. We use here the 7 day average, because if the current price drops
+    # for example now, it would immediately sell, but it could re-rise in 1 hour, and this doesn't effects that much the
+    # 7 day average, so it's better to work here with that. After placing an order, we delete tha database, because we
+    # have to be up to date, and at the beginning of the loop we rebuild always it.
 
 
 def buy(currentBalance, currentPrice):
@@ -122,6 +150,7 @@ def buy(currentBalance, currentPrice):
     buy_quantity = round(currentBalance / currentPrice)
     order = client.create_order(symbol='BTCBUSD', side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
     print(order)
+    # This function creates and places a coin buying order.
 
 
 def sell(coinBalance):
@@ -129,3 +158,4 @@ def sell(coinBalance):
     sell_quantity = coinBalance
     order = client.create_order(symbol='BTCBUSD', side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     print(order)
+    # This function creates and places a coin selling order.
