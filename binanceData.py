@@ -159,3 +159,4 @@ def sell(coinBalance):
     order = client.create_order(symbol='BTCBUSD', side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     print(order)
     # This function creates and places a coin selling order.
+
