@@ -7,17 +7,6 @@ from datetime import datetime
 import binance.enums as be
 
 
-def handle_socket_message(msg):
-    df = pd.DataFrame([msg])
-    df = df.loc[:, ['E', 'p']]
-    df.columns = ['DAY', 'Price']
-    df.Price = df.Price.astype(float)
-    df.DAY = pd.to_datetime(df.DAY, unit='ms')
-    df.to_sql(config.DbHistorical, config.engineHistorical, if_exists='append', index=False)
-    # This function formats the response message from the API, we only need the price and the timestamp, so we get only
-    # those columns. After we have the data we need, we store it in a database.
-
-
 def getHistoricalData1Day(Db, eng):
     client = Client(config.apiKey, config.apiSecurity)
     klines = client.get_historical_klines(symbol='BTCBUSD', interval=Client.KLINE_INTERVAL_1DAY,
@@ -128,6 +117,7 @@ def strategy():
         deleteDataBase(config.DbHistorical + '.db')
         time.sleep(65)
         coinBalance, currentBalance = getClientData(symbolCoin='BTC', symbolMoney='BUSD')
+        baseBalance = currentBalance
     # This is the main function. Here is implemented the strategy. First, we get the clients balances, and the moving
     # averages. Then the 2 lists we use are used to follow the different moving average changes. We calculate the
     # distance between the moving averages, because we use these distances to decide to buy or sell coins. In an
@@ -159,4 +149,3 @@ def sell(coinBalance):
     order = client.create_order(symbol='BTCBUSD', side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     print(order)
     # This function creates and places a coin selling order.
-
