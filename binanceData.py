@@ -9,7 +9,7 @@ import binance.enums as be
 
 def getHistoricalData1Day(Db, eng):
     client = Client(config.apiKey, config.apiSecurity)
-    klines = client.get_historical_klines(symbol='BTCBUSD', interval=Client.KLINE_INTERVAL_1DAY,
+    klines = client.get_historical_klines(symbol=config.currencySymbol+config.moneySymbol, interval=Client.KLINE_INTERVAL_1DAY,
                                           start_str='15 Oct, 2021')
     df = pd.DataFrame(klines)
     df = df.loc[:, [0, 1]]
@@ -25,7 +25,7 @@ def getHistoricalData1Day(Db, eng):
 
 def getHistoricalDataAux(Db, eng):
     client = Client(config.apiKey, config.apiSecurity)
-    klines = client.get_historical_klines(symbol='BTCBUSD', interval=Client.KLINE_INTERVAL_1MINUTE,
+    klines = client.get_historical_klines(symbol=config.currencySymbol+config.moneySymbol, interval=Client.KLINE_INTERVAL_1MINUTE,
                                           start_str=datetime.strftime(datetime.today(), '%d %B, %Y'))
     df = pd.DataFrame(klines)
     df = df.loc[:, [0, 1]]
@@ -98,7 +98,7 @@ def getMovingAverages():
 
 
 def strategy():
-    coinBalance, baseBalance = getClientData(symbolCoin='BTC', symbolMoney='BUSD')
+    coinBalance, baseBalance = getClientData(symbolCoin=config.currencySymbol, symbolMoney=config.moneySymbol)
     ma1Day, ma7Days, ma30Days, currentPrice = getMovingAverages()
     currentBalance = baseBalance
     distanceListSell = [math.sqrt(abs(ma7Days ** 2 - ma30Days ** 2))]
@@ -116,7 +116,7 @@ def strategy():
                 buy(currentBalance=currentBalance, currentPrice=currentPrice)
         deleteDataBase(config.DbHistorical + '.db')
         time.sleep(65)
-        coinBalance, currentBalance = getClientData(symbolCoin='BTC', symbolMoney='BUSD')
+        coinBalance, currentBalance = getClientData(symbolCoin=config.currencySymbol, symbolMoney=config.moneySymbol)
         baseBalance = currentBalance
     # This is the main function. Here is implemented the strategy. First, we get the clients balances, and the moving
     # averages. Then the 2 lists we use are used to follow the different moving average changes. We calculate the
@@ -138,7 +138,7 @@ def strategy():
 def buy(currentBalance, currentPrice):
     client = Client(config.apiKey, config.apiSecurity)
     buy_quantity = round(currentBalance / currentPrice)
-    order = client.create_order(symbol='BTCBUSD', side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
+    order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
     f = open("tradeHistory.txt")
     f.write("Buy order:\n")
     f.write(order)
@@ -150,7 +150,7 @@ def buy(currentBalance, currentPrice):
 def sell(coinBalance):
     client = Client(config.apiKey, config.apiSecurity)
     sell_quantity = coinBalance
-    order = client.create_order(symbol='BTCBUSD', side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
+    order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     f = open("tradeHistory.txt")
     f.write("Sell orderL\n")
     f.write(order)

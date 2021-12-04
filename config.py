@@ -5,6 +5,8 @@ DbHistorical = 'BTCBUSDHistorical'
 DbRealTime = 'BTCBUSD'
 engineHistorical = sqlalchemy.create_engine('sqlite:///BTCBUSDHistorical.db')
 engineRealTime = sqlalchemy.create_engine('sqlite:///BTCBUSD.db')
+currencySymbol = 'BTC'
+moneySymbol = 'BUSD'
 # Zsombi
 
 # apiKey = 'k9PP6Q9Zop25GDns7iDwopDx9ERmqmgp7tokaNlVCmNT5nk9hQvzXU0Q7DzOOvca'
