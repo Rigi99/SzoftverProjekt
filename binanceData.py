@@ -152,7 +152,7 @@ def sell(coinBalance):
     sell_quantity = coinBalance
     order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     f = open("tradeHistory.txt")
-    f.write("Sell orderL\n")
+    f.write("Sell order:\n")
     f.write(order)
     f.write("\n\n")
     f.close()
