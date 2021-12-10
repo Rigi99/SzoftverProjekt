@@ -1,3 +1,4 @@
+import json
 import math
 import pandas as pd
 import config
@@ -47,8 +48,10 @@ def deleteDataBase(Db):
 
 
 def getClientData(symbolCoin, symbolMoney):
-    clientAsset = Client(config.apiKey, config.apiSecurity)
-    data = clientAsset.get_account()
+    # clientAsset = Client(config.apiKey, config.apiSecurity)
+    # data = clientAsset.get_account()
+    f = open('data.json')
+    data = json.load(f)
     coinAmount = 0
     baseBalance = 0
     for it in data['balances']:
@@ -138,11 +141,12 @@ def strategy():
 def buy(currentBalance, currentPrice):
     client = Client(config.apiKey, config.apiSecurity)
     buy_quantity = round(currentBalance / currentPrice)
-    order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
-    f = open("tradeHistory.txt")
-    f.write("Buy order:\n")
-    f.write(order)
-    f.write("\n\n")
+    # order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
+    order = client.create_test_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
+    f = open('tradeHistory.txt', 'a+')
+    f.write('Buy order:\n')
+    f.write(str(order))
+    f.write('\n\n')
     f.close()
     # This function creates and places a coin buying order.
 
@@ -150,10 +154,11 @@ def buy(currentBalance, currentPrice):
 def sell(coinBalance):
     client = Client(config.apiKey, config.apiSecurity)
     sell_quantity = coinBalance
-    order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
-    f = open("tradeHistory.txt")
-    f.write("Sell order:\n")
-    f.write(order)
-    f.write("\n\n")
+    # order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
+    order = client.create_test_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
+    f = open('tradeHistory.txt', 'a+')
+    f.write('Sell order:\n')
+    f.write(str(order))
+    f.write('\n\n')
     f.close()
     # This function creates and places a coin selling order.
