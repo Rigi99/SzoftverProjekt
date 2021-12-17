@@ -9,12 +9,12 @@
     "balances": [
         {
             "asset": "BTC",
-            "free": "0",
+            "free": "1.26",
             "locked": "0.00000000"
         },
         {
             "asset": "BUSD",
-            "free": "60000",
+            "free": "0",
             "locked": "0.00000000"
         }
     ]

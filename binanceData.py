@@ -11,7 +11,7 @@ import binance.enums as be
 def getHistoricalData1Day(Db, eng):
     client = Client(config.apiKey, config.apiSecurity)
     klines = client.get_historical_klines(symbol=config.currencySymbol+config.moneySymbol, interval=Client.KLINE_INTERVAL_1DAY,
-                                          start_str='15 Oct, 2021')
+                                          start_str='12 Nov, 2021')
     df = pd.DataFrame(klines)
     df = df.loc[:, [0, 1]]
     df.columns = ['DAY', 'Price']
@@ -59,6 +59,7 @@ def getClientData(symbolCoin, symbolMoney):
             coinAmount = float(it['free'])
         if it['asset'] == symbolMoney:
             baseBalance = float(it['free'])
+    f.close()
     return coinAmount, baseBalance
     # This function returns the clients coin balance and the clients money balance.
 
@@ -90,12 +91,12 @@ def movingAverageMethodBinance30Days(Db, eng):
 
 def getMovingAverages():
     getHistoricalData1Day(config.DbHistorical, config.engineHistorical)
-    ma1Day, currentPrice = movingAverageMethodBinance1Day(config.DbHistorical, config.engineHistorical)
-    ma7Days, currentPrice = movingAverageMethodBinance7Days(config.DbHistorical, config.engineHistorical)
-    ma30Days, currentPrice = movingAverageMethodBinance30Days(config.DbHistorical, config.engineHistorical)
-    # ma1Day, currentPrice = 60000, 60000
-    # ma7Days, currentPrice = 59000, 60000
-    # ma30Days, currentPrice = 58500, 60000
+    # ma1Day, currentPrice = movingAverageMethodBinance1Day(config.DbHistorical, config.engineHistorical)
+    # ma7Days, currentPrice = movingAverageMethodBinance7Days(config.DbHistorical, config.engineHistorical)
+    # ma30Days, currentPrice = movingAverageMethodBinance30Days(config.DbHistorical, config.engineHistorical)
+    ma1Day, currentPrice = 60000, 60000
+    ma7Days, currentPrice = 59000, 60000
+    ma30Days, currentPrice = 58500, 60000
     return ma1Day, ma7Days, ma30Days, currentPrice
     # In this function we return the different moving averages, and the current price.
 
@@ -110,7 +111,7 @@ def strategy():
         ma1Day, ma7Days, ma30Days, currentPrice = getMovingAverages()
         if currentPrice >= ma30Days and ma7Days >= ma30Days and coinBalance != 0:
             distanceListSell.append(math.sqrt(abs(ma7Days ** 2 - ma30Days ** 2)))
-            if distanceListSell[-2] > distanceListSell[-1]:
+            if distanceListSell[-2] >= distanceListSell[-1]:
                 if baseBalance < currentPrice * coinBalance:
                     sell(coinBalance=coinBalance)
         elif currentPrice < ma30Days and ma7Days < ma30Days and currentBalance != 0:
@@ -140,7 +141,7 @@ def strategy():
 
 def buy(currentBalance, currentPrice):
     client = Client(config.apiKey, config.apiSecurity)
-    buy_quantity = round(currentBalance / currentPrice)
+    buy_quantity = currentBalance / currentPrice
     # order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_BUY, type=be.ORDER_TYPE_MARKET, quantity=buy_quantity)
     f = open('tradeHistory.txt', 'a+')
     f.write('Buy order:\n')
@@ -156,7 +157,7 @@ def sell(coinBalance):
     # order = client.create_order(symbol=config.currencySymbol+config.moneySymbol, side=be.SIDE_SELL, type=be.ORDER_TYPE_MARKET, quantity=sell_quantity)
     f = open('tradeHistory.txt', 'a+')
     f.write('Sell order:\n')
-    f.write(str(sell_quantity))
+    f.write(str(sell_quantity)+'\t'+str(60000*sell_quantity))
     f.write('\n\n')
     f.close()
     # This function creates and places a coin selling order.
